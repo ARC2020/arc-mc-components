@@ -7,7 +7,10 @@ class IO():
     KC: other funtionality to add? watchdog for pin
     '''
     def __init__(self, host = None, port = None):
-        self.pi = pigpio.pi(host, port)
+        if host is None:
+            self.pi = pigpio.pi()
+        else:
+            self.pi = pigpio.pi(host, port)
 
     def setMode(self, pin, output = 1):
         if output:
@@ -21,7 +24,7 @@ class IO():
         1 = OUTPUT
         Any other number is an ALT pin
         '''
-        return self.pi.getMode(pin)
+        return self.pi.get_mode(pin)
         
     def setInputMode(self, pin, pullup = 1):
         '''
@@ -145,8 +148,9 @@ if __name__ == "__main__":
     dut.toggle(DIR)
 
     # test clk function
-    dut.clkStart(PUL, 1)
-    sleep(10)
+    dut.clkStart(PUL, 10)
+    dut.sendPulses(DIR, 100, 10)
+    # sleep(10)
     dut.clkStop(PUL)
 
     # test ramp function
@@ -154,3 +158,5 @@ if __name__ == "__main__":
         [320, 200],
 	    [500, 400],
 	    [800, 500]])
+    
+    dut.disconnect()

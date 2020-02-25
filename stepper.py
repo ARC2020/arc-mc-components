@@ -1,6 +1,5 @@
 from math import floor
 
-
 class StepperError(Exception):
     pass
 
@@ -9,29 +8,43 @@ class Stepper():
     sPulsePerRev = (None, 200, 400, 800, 1600, 3200, 6400)
     sCurrent = (0.5, 1.0, 1.5, 2.0, 2.5, 2.8, 3.0, 3.5)
     sPkCurrent = (0.7, 1.2, 1.7, 2.2, 2.7, 2.9, 3.2, 4.0)
+    gearboxRatio = 77    
     numSwitches = 6
 
-    def __init__(self):
-        self.rgSwitches = [0] * Stepper.numSwitches
-        self.bEna = 0
-        self.bDir = 0
-        self.bPul = 0 
+    def __init__(self, io, pinDir, pinPul, pinEna = None):
+        self.io = io
+        self.pinDir = pinDir
+        self.pinPul = pinPul
+        self.pinEna = pinEna
         self.pulsePerRev = Stepper.sPulsePerRev[0]
 
-    def setEna(self, state):
-        self.bEna = state
-
-    def setDir(self, state):
-        self.bDir = state
-
-    def setPul(self, state):
-        self.bPul = state
-
-    def setPort(self, port):
+    def setupPin(self, pin):
         '''
-        some way to set ENA,DIR,PUL pins?
+        uses rpi IO to set pin to output
         '''
-        pass
+        self.io.getMode(pin)
+
+    def setup(self):
+        '''
+        intializes pul and dir pins and sets them low
+        '''
+        self.setupPin(self.pinDir)
+        self.setPin(self.pinDir, 0)
+        self.setupPin(self.pinPul)
+        self.setPin(self.pinPul, 0)
+
+
+    def setPin(self, pin, state):
+        '''
+        general way to set pin
+        '''
+        self.io.write(pin, state)
+
+    def getPin(self, pin):
+        return self.io.read(pin)
+
+    def toggleDir(self):
+        self.io.toggle(self.pinDir)
 
     def setPulsePerRev(self, ppr):
         if ppr not in Stepper.sPulsePerRev:
@@ -40,31 +53,43 @@ class Stepper():
             self.pulsePerRev = ppr
 
     def calcPulses(self, degree):
-        pulses = degree*self.pulsePerRev/360
+        pulses = degree*self.pulsePerRev/(360*Stepper.gearboxRatio)
         return abs(floor(pulses))
     
-    def rotateDegrees(self, degree):
+    def rotate(self, degree):
 
         # check direction
         # need to double check direction mapping 
         if degree > 0:
-            self.bDir = 1
+            bDir = 1
         else:
-            self.bDir = 0
+            bDir = 0
 
         # get number of pulses to drive 
         pulses = self.calcPulses(degree)
 
         # ok now set direction and pulse somehow 
-
-        print("pulses: ", pulses, " direction: ", self.bDir)
-        
+        print("pulses: ", pulses, " direction: ", bDir)
+        self.setPin(self.pinDir, bDir)
+        self.io.sendPulses(self.pinPul, pulses, 500)
 
 
 if __name__ == "__main__":
     # testing 
-    stepper = Stepper()
-    stepper.setPulsePerRev(400)
-    stepper.rotateDegrees(36)
-    stepper.rotateDegrees(-36)
+    from .rpi_interface import IO
+    # Set GPIO17/PIN11 for DIR control 
+    DIR = 17
+    
+    # Set GPIO27/PIN13 for PUL control 
+    PUL = 27
+
+    gpio = IO()
+    stepper = Stepper(gpio, pinDir=DIR, pinPul=PUL)
+    stepper.setup()
+    stepper.setPulsePerRev(200)
+    wait = input()
+    stepper.rotate(36)
+    wait = input()
+    stepper.rotate(-36)
+    wait = input()  
     stepper.setPulsePerRev(300)

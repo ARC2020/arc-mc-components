@@ -1,6 +1,7 @@
 import pigpio # library to contriol rpi pins
 from time import sleep
 
+
 class IO():
     ''''
     pin: 0 to 53 based off of pi broadcom number

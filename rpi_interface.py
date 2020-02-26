@@ -95,8 +95,25 @@ class IO():
     def getFreq(self, pin):
         return self.pi.get_PWM_frequency(pin)
 
-    
-    def generate_ramp(self, pin, ramp):
+    def calcRamp(self, steps):
+        startFreq = 500
+        endFreq = 4300
+        increments = 10
+        incFreq = (endFreq - startFreq)//increments
+        ramp = [0]*(increments+1)
+        numSteps = steps//(2*increments)
+        countSteps = steps
+        countFreq = startFreq
+        for i in range(increments):
+            pair = [countFreq, numSteps] 
+            ramp[i] = pair
+            countSteps -= numSteps
+            countFreq  += incFreq
+        # populate remainder in last step
+        ramp[-1] = [endFreq, countSteps]
+        return ramp
+
+    def generateRamp(self, pin, ramp):
         '''
         Generate ramp wave forms.
         ramp:  List of [Frequency, Steps], max length 20 

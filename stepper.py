@@ -53,7 +53,8 @@ class Stepper():
             self.pulsePerRev = ppr
 
     def calcPulses(self, degree):
-        pulses = degree*self.pulsePerRev/(360*Stepper.gearboxRatio)
+        stepAngle = 360/(self.pulsePerRev*Stepper.gearboxRatio)
+        pulses = degree/stepAngle
         return abs(floor(pulses))
     
     def rotate(self, degree):
@@ -71,12 +72,23 @@ class Stepper():
         # ok now set direction and pulse somehow 
         print("pulses: ", pulses, " direction: ", bDir)
         self.setPin(self.pinDir, bDir)
-        self.io.sendPulses(self.pinPul, pulses, 500)
+        if pulses > 8000:
+            ramp = self.io.calcRamp(pulses)
+            print(ramp)
+            self.io.generateRamp(self.pinPul, ramp)
+        else: 
+            self.io.sendPulses(self.pinPul, pulses, 800)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and __package__ is None:
     # testing 
-    from .rpi_interface import IO
+    #from os import sys, path
+    #sys.path.append(path.dirname(path.abspath(__file__)))
+    import time
+    try:
+        from .rpi_interface import IO
+    except Exception:
+        from rpi_interface import IO
     # Set GPIO17/PIN11 for DIR control 
     DIR = 17
     
@@ -86,10 +98,15 @@ if __name__ == "__main__":
     gpio = IO()
     stepper = Stepper(gpio, pinDir=DIR, pinPul=PUL)
     stepper.setup()
+    #stepper.gearboxRatio = 1
     stepper.setPulsePerRev(200)
     wait = input()
-    stepper.rotate(36)
+    start = time.time()
+    stepper.rotate(360)
+    print("elapsed time: ",time.time()-start)
     wait = input()
     stepper.rotate(-36)
-    wait = input()  
-    stepper.setPulsePerRev(300)
+    wait = input()
+    stepper.rotate(36)
+      
+    

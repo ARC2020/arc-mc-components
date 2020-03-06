@@ -82,6 +82,24 @@ class IO():
     def clkStop(self, pin):
         self.pi.set_PWM_dutycycle(pin, 0)
 
+    def triggerCallback(self, pin, func, state = 1):
+        '''
+            Calls a user supplied function(callback) whenever state detected on pin
+            states:
+                0 = falling edge 
+                1 = rising edge 
+                2 = either 0 or 1 
+            Callback function recieves: gpio, level, tick
+            gpio: 0 to 31
+            level:
+                0 = falling edge 
+                1 = rising edge
+                2 = watchdog timeout 
+            tick: 32 bit number of microseconds since boot, count restarts every 72 minutes
+        '''
+        states = [pigpio.FALLING_EDGE, pigpio.RISING_EDGE, pigpio.EITHER_EDGE]
+        self.pi.callback(pin, states[state], func)
+        
     def sendPulses(self, pin, numPulse, freq):
 
         self.write(pin, 0)

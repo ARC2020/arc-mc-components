@@ -23,10 +23,10 @@ class DAC():
 
 
     def setup(self):
-        self.i2cHandle = self.io.pigpio.i2c_open(self.i2cMode, DAC.ADDR)
+        self.i2cHandle = self.io.pi.i2c_open(self.i2cMode, DAC.ADDR)
 
     def read(self):
-        (numByte, readData) = self.io.pigpio.i2c_read_device(self.i2cHandle, DAC.readBytes)
+        (numByte, readData) = self.io.pi.i2c_read_device(self.i2cHandle, DAC.readBytes)
         if numByte != DAC.readBytes:
             raise DACError('Did not read back correctly, instead read {} bytes and data: {}'.format(numByte, readData))
         return readData
@@ -50,18 +50,36 @@ class DAC():
         dacVal.append(data[2][0:3])
         return pwrOnReset, pwrMode, dacVal
 
-    def writeFast(self, dacVal = DAC.DACZERO, pwrMode=DAC.OPMODE[0]):
-        data = DAC.WRITEFAST << 2
-        data = data | pwrMode
-        data = (data << 12) | dacVal
+    def writeFast(self, dacVal = None, pwrMode=None):
+        if dacVal is None:
+            dacVal = DAC.DACZERO
+        if pwrMode is None:
+            pwrMode = DAC.OPMODE[0]
+        #data = DAC.WRITEFAST << 2
+        #data = data | pwrMode
+        #data = (data << 12) | dacVal
         # repeat data again in message 
-        msg = (data << 16) | data
-        self.io.pigpio.i2c_write_device(self.i2cHandle, msg)
+        data = bin(dacVal)
+        data = data[2:]
+        size = len(data)
+        if size < 12:
+            data = '0'*(12-size)+data
+        msg = '0000'+data
+        #msg = (data << 16) | data
+        msg = msg + msg
+        print(msg)
+        print(len(msg))
+        #msgBin = bin(msg)
+        #msgBin = msgBin[2:]
+        #print(msgBin)
+        self.io.pi.i2c_write_device(self.i2cHandle, msg)
 
     def setVolt(self, volt):
         if volt < 0 or volt > 5:
             raise DACError(volt, " not a valid DAC voltage")
         dacValue = int((volt*1000) / DAC.lsb5V)
+        print(dacValue)
+        print(bin(dacValue))
         self.writeFast(dacValue)
 
     def off(self):
@@ -78,11 +96,11 @@ if __name__ == "__main__":
     dac = DAC(gpio)
     print('DAC setup')
     dac.setup()
-    print('Read DAC')
-    print(dac.readDac())
-    print('Read EEProm')
-    print(dac.readEeprom())
-    wait = input()
+    #print('Read DAC')
+    #print(dac.readDac())
+    #print('Read EEProm')
+    #print(dac.readEeprom())
+    #wait = input()
     print('Setting 1.0V')
     dac.setVolt(1.0)
-    print(dac.readDac())
+    #print(dac.readDac())

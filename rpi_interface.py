@@ -60,6 +60,19 @@ class IO():
     def disconnect(self):
         self.pi.stop()
 
+    def pwmStart(self, pin, duty, freq = 1000):
+        '''
+        does not init pin 
+        freq must be a preset value
+        freq = [8k, 4k, 2k, 1.6k, 1k, 800, 500, 400, 320,
+        250, 200, 160, 100, 80, 50, 40, 20, 10]
+        '''
+        self.pi.set_PWM_dutycycle(pin, duty)
+        self.pi.set_PWM_frequency(pin, freq)
+
+    def pwmStop(self, pin):
+        self.pi.set_PWM_frequency(pin, 0)
+
     def clkStart(self, pin, freq):
         '''
         sets pin to output low if not already set
@@ -160,6 +173,9 @@ class IO():
             chain += [255, 0, wid[i], 255, 1, x, y]
 
         self.pi.wave_chain(chain)  # Transmit chain.
+
+    def i2cOpen(self, i2cMode, addr):
+        handle = self.pi.pig
 
 if __name__ == "__main__":
 

@@ -32,23 +32,29 @@ class DAC():
             raise DACError('Did not read back correctly, instead read {} bytes and data: {}'.format(numByte, readData))
         return readData
 
+    def getBStr(self, data, byteNum):
+        byteData = data[byteNum]
+        byteB = bin(byteData)[2:] # remove '0b' prefix
+        return byteB
+
+
     def readEeprom(self, data = None):
         if data is None:
             data = self.read()
 
-        eepromRdy   = data[0][0]
-        pwrMode     = data[DAC.readBytes-2][1:2]
-        dacVal      = data[DAC.readBytes-2][4:]
-        dacVal.append(data[DAC.readBytes-1])
+        eepromRdy   = self.getBStr(data, 0)[0]
+        pwrMode     = self.getBStr(data, DAC.readBytes-2)[1:2]
+        dacVal      = self.getBStr(data, DAC.readBytes-2)[4:]
+        dacVal.append(self.getBStr(data, DAC.readBytes-1))
         return eepromRdy, pwrMode, dacVal
 
     def readDac(self, data = None):
         if data is None:
             data = self.read()
-        pwrOnReset  = data[0][1]
-        pwrMode     = data[0][5:6]
-        dacVal      = data[1]
-        dacVal.append(data[2][0:3])
+        pwrOnReset  = self.getBStr(data, 0)[1]
+        pwrMode     = self.getBStr(data, 0)[5:6]
+        dacVal      = self.getBStr(data, 1)
+        dacVal.append(self.getBStr(data, 2)[0:3])
         return pwrOnReset, pwrMode, dacVal
 
     def writeFast(self, dacVal):
@@ -80,15 +86,20 @@ class DAC():
             print('Sending: ', msg, ' bits: ', len(msg))
         self.io.pi.i2c_write_device(self.i2cHandle, msg)
 
-    def setVolt(self, volt):
+    def setVolt(self, volt, eeprom = 0):
         if volt < 0 or volt > 5:
             raise DACError(volt, " not a valid DAC voltage")
-        dacValue = int((volt*1000) / DAC.lsb5V)
+        dacVal = int((volt*1000) / DAC.lsb5V)
         if DAC.verbose:
             print("Setting ", volt, " V")
-        self.writeFast(dacValue)
+        if eeprom:
+            self.writeEepromDac(dacVal)
+        else:
+            self.writeFast(dacVal)
 
-    def off(self, pwrMode):
+    def off(self, pwrMode = None):
+        if pwrMode is None:
+            pwrMode = DAC.OPMODE[-1]
         if DAC.verbose:
             print("Setting 0 V")
             print("PWR Mode: ", pwrMode)
@@ -119,3 +130,7 @@ if __name__ == "__main__":
     print('Setting 1.0V')
     dac.setVolt(1.0)
     #print(dac.readDac())
+    wait = input()
+    dac.setVolt(2.0, eeprom = 1)
+    print(dac.readEeprom())
+    dac.off(DAC.OPMODE[-1])

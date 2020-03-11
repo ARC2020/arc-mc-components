@@ -35,6 +35,9 @@ class DAC():
     def getBStr(self, data, byteNum):
         byteData = data[byteNum]
         byteB = bin(byteData)[2:] # remove '0b' prefix
+        numBits = len(byteB)
+        if numBits < 8:
+            byteB = '0'*(8-numBits) + byteB 
         return byteB
 
 
@@ -43,25 +46,36 @@ class DAC():
             data = self.read()
 
         eepromRdy   = self.getBStr(data, 0)[0]
-        pwrMode     = self.getBStr(data, DAC.readBytes-2)[1:2]
+        pwrMode     = self.getBStr(data, DAC.readBytes-2)[1:3]
         dacVal      = self.getBStr(data, DAC.readBytes-2)[4:]
-        dacVal.append(self.getBStr(data, DAC.readBytes-1))
+        dacVal      += self.getBStr(data, DAC.readBytes-1)
+
+        if DAC.verbose:
+            print('Read i2c: ',data)
+            print('EEPROM Rdy: ',eepromRdy)
+            print('PWR Mode: ', pwrMode)
+            print('EEPROM: ', dacVal, int(dacVal,2))
+
         return eepromRdy, pwrMode, dacVal
 
     def readDac(self, data = None):
         if data is None:
             data = self.read()
         pwrOnReset  = self.getBStr(data, 0)[1]
-        pwrMode     = self.getBStr(data, 0)[5:6]
+        pwrMode     = self.getBStr(data, 0)[5:7]
         dacVal      = self.getBStr(data, 1)
-        dacVal.append(self.getBStr(data, 2)[0:3])
+        dacVal      += self.getBStr(data, 2)[0:4]
+        if DAC.verbose:
+            print('Read i2c: ',data)
+            print('PWR On Reset: ',pwrOnReset)
+            print('PWR Mode: ', pwrMode)
+            print('DacVal: ', dacVal, int(dacVal,2))
         return pwrOnReset, pwrMode, dacVal
 
     def writeFast(self, dacVal):
         if dacVal > 2**12:
             raise DACError("dacVal > 12-bits: ", dacVal)
         # send the msg twice
-        # msg = bytes([dacVal, dacVal])
         msg = dacVal.to_bytes(2,byteorder='big')
         msg += msg
         self.sendDac(dacVal, msg)
@@ -78,12 +92,14 @@ class DAC():
         msg += dacBytes
         # send msg twice 
         msg += msg
+        if DAC.verbose:
+            print('Setting EEPROM')
         self.sendDac(dacVal, msg)
 
     def sendDac(self, dacVal, msg):
         if DAC.verbose:
-            print('Setting dac: ',dacVal )
-            print('Sending: ', msg, ' bits: ', len(msg))
+            print('Setting dac: ', bin(dacVal), dacVal)
+            print('Sending: ', msg, ' bytes: ', len(msg))
         self.io.pi.i2c_write_device(self.i2cHandle, msg)
 
     def setVolt(self, volt, eeprom = 0):
@@ -100,18 +116,17 @@ class DAC():
     def off(self, pwrMode = None):
         if pwrMode is None:
             pwrMode = DAC.OPMODE[-1]
+        
+        cmd = pwrMode << 4
+        msg = bytes([cmd, 0, cmd, 0])
+        self.io.pi.i2c_write_device(self.i2cHandle, msg)
         if DAC.verbose:
             print("Setting 0 V")
             print("PWR Mode: ", pwrMode)
-        cmd = pwrMode << 4
-        self.io.pi.i2c_write_device(self.i2cHandle, bytes([cmd, 0, cmd, 0]))
-
-    @classmethod
-    def binary(cls, num):
-        b = bin(num)
-        return b[2:]
+            print("Sending: ", msg)
 
 if __name__ == "__main__":
+    import time
     try:
         from .rpi_interface import IO
     except Exception:
@@ -122,15 +137,18 @@ if __name__ == "__main__":
     dac = DAC(gpio)
     print('DAC setup')
     dac.setup()
-    #print('Read DAC')
-    #print(dac.readDac())
-    #print('Read EEProm')
-    #print(dac.readEeprom())
-    #wait = input()
+    print('Read DAC')
+    print(dac.readDac())
+    print('Read EEProm')
+    print(dac.readEeprom())
+    wait = input()
     print('Setting 1.0V')
     dac.setVolt(1.0)
-    #print(dac.readDac())
+    print(dac.readDac())
     wait = input()
     dac.setVolt(2.0, eeprom = 1)
+    # cannot read eeprom too fast after setting
+    time.sleep(0.1)
     print(dac.readEeprom())
+    wait = input()
     dac.off(DAC.OPMODE[-1])

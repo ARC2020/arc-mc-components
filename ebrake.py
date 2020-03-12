@@ -17,6 +17,7 @@ class Ebrake():
     def setOutputPin(self, pin):
         self.pinEbrake = pin
         self.io.getMode(pin, output = 1)
+        self.io.write(pin, 0)
 
     def readMBrake(self):
         return self.io.read(self.pinMBrake)
@@ -30,9 +31,31 @@ class Ebrake():
         if level == 1:
             # rising edge occured, notify pi 
             # raise flag?
-            pass
+            print('Manual brake: 1')
         if level == 0:
             # falling edge
             # notify pi 
-            pass
+            print('Manual brake: 0')
         return level 
+
+if __name__ == "__main__":
+    import time
+    try:
+        from .rpi_interface import IO
+    except Exception:
+        from rpi_interface import IO
+    
+    print('Connecting to pi')
+    gpio = IO()
+
+    RELAY = 20 
+    SENSE = 21
+
+    ebrake = Ebrake(gpio, SENSE, RELAY)
+    ebrake.setup()
+    print("Ebrake: 1")
+    ebrake.setEbrake(1)
+    wait = ("Hit enter to set Ebrake: 0")
+    ebrake.setEbrake(0)
+    print("waiting for 5 seconds")
+    time.sleep()

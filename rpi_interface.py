@@ -71,7 +71,7 @@ class IO():
         self.pi.set_PWM_frequency(pin, freq)
 
     def pwmStop(self, pin):
-        self.pi.set_PWM_frequency(pin, 0)
+        self.pi.set_PWM_dutycycle(pin, 0)
 
     def clkStart(self, pin, freq):
         '''

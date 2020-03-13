@@ -1,4 +1,7 @@
-from .dac import DAC
+try:
+    from .dac import DAC
+except Exception:
+    from dac import DAC
 
 class ThrottleError(Exception):
     pass

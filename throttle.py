@@ -67,11 +67,9 @@ if __name__ == "__main__":
     
     print('Connecting to pi')
     gpio = IO()
-    
-    # pwm setup 
-    PWM = 2
-    gpio = IO()
-    throttle = Throttle(gpio, PWM, 1)
+    # dac test 
+
+    throttle = Throttle(gpio, pin = 1, pwm = 0)
     print("throttle setup")
     throttle.setup()
     print("set 2V")

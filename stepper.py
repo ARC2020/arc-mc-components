@@ -22,7 +22,7 @@ class Stepper():
         '''
         uses rpi IO to set pin to output
         '''
-        self.io.getMode(pin)
+        self.io.setMode(pin)
 
     def setup(self):
         '''

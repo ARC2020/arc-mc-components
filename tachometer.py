@@ -2,7 +2,7 @@ from numpy import diff, mean
 
 
 class Tachometer():
-    def __init__(self, io, pin, circ = 2608):
+    def __init__(self, io, pin, circ = 2055):
         self.io = io
         self.pin = pin
         self.circ = circ

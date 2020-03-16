@@ -16,7 +16,7 @@ class Stepper():
         self.pinDir = pinDir
         self.pinPul = pinPul
         self.pinEna = pinEna
-        self.pulsePerRev = Stepper.sPulsePerRev[0]
+        self.pulsePerRev = Stepper.sPulsePerRev[1]
 
     def setupPin(self, pin):
         '''

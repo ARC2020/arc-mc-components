@@ -18,7 +18,7 @@ class Throttle():
         self.pin = pin 
         self.pwm = pwm
         self.maxV = 3.7
-        self.minV = 0.7
+        self.minV = 0.0
 
     def setup(self):
         if self.pwm:

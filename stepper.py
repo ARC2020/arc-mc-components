@@ -68,6 +68,11 @@ class Stepper():
         '''
         self.rotate(self.anglePos*-1)
 
+    def store(self):
+        f = open("stepper.txt")
+        f.write(self.anglePos)
+        f.close()
+
     def rotate(self, degree):
         '''
         this considers the rotation angle to be relative and will rotate the stepper motor by the amount specified

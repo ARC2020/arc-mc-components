@@ -42,7 +42,7 @@ if __name__ == "__main__":
     print('Setting up tach')
     tach = Tachometer(gpio, TACH)
     tach.setup()
-    wait = 10
+    wait = 100
     print(f"waiting for {wait} seconds")
     time.sleep(wait)
 

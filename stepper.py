@@ -11,12 +11,14 @@ class Stepper():
     gearboxRatio = 77    
     numSwitches = 6
 
-    def __init__(self, io, pinDir, pinPul, pinEna = None):
+    def __init__(self, io, pinDir, pinPul, pinEna = None, maxAngleDeg = 70):
         self.io = io
         self.pinDir = pinDir
         self.pinPul = pinPul
         self.pinEna = pinEna
         self.pulsePerRev = Stepper.sPulsePerRev[1]
+        self.anglePos = 0
+        self.maxAngleDeg = maxAngleDeg
 
     def setupPin(self, pin):
         '''
@@ -40,6 +42,9 @@ class Stepper():
         '''
         self.io.write(pin, state)
 
+    def setMaxAngleDeg(self, angle):
+        self.maxAngleDeg = angle
+
     def getPin(self, pin):
         return self.io.read(pin)
 
@@ -56,8 +61,23 @@ class Stepper():
         stepAngle = 360/(self.pulsePerRev*Stepper.gearboxRatio)
         pulses = degree/stepAngle
         return abs(floor(pulses))
-    
+
+    def reset(self):
+        '''
+        returns stepper to original position 
+        '''
+        self.rotate(self.anglePos*-1)
+
     def rotate(self, degree):
+        '''
+        this considers the rotation angle to be relative and will rotate the stepper motor by the amount specified
+        unless bounds are exceeded
+        '''
+
+        # check bounds
+        if abs(self.anglePos + degree) > abs(self.maxAngleDeg):
+            print(f"Exceeds rotation bounds of {self.maxAngleDeg} degrees. No rotation") 
+            return
 
         # check direction
         # need to double check direction mapping 
@@ -78,6 +98,9 @@ class Stepper():
             self.io.generateRamp(self.pinPul, ramp)
         else: 
             self.io.sendPulses(self.pinPul, pulses, 800)
+
+        # store rotation
+        self.anglePos += degree
 
 
 if __name__ == "__main__" and __package__ is None:

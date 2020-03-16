@@ -27,10 +27,10 @@ class Ebrake():
     def readMBrake(self):
         return self.io.read(self.pinMBrake)
 
-    def setEbrake(self, on = 1):
-        self.io.write(self.pinEBrake, on)
-        self.stateEBrake = on
-        self.flagBrake = on
+    def setEbrake(self, state = 0):
+        self.io.write(self.pinEBrake, state)
+        self.stateEBrake = state
+        self.flagBrake = state
 
     def mBrakeCallback(self, pin, level, tick):
         if pin != self.pinMBrake:

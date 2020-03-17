@@ -69,8 +69,8 @@ class Stepper():
         self.rotate(self.anglePos*-1)
 
     def store(self):
-        f = open("stepper.txt")
-        f.write(self.anglePos)
+        f = open("stepper.txt", 'w')
+        f.write(str(self.anglePos))
         f.close()
 
     def rotate(self, degree):
@@ -86,7 +86,7 @@ class Stepper():
 
         # check direction
         # need to double check direction mapping 
-        if degree > 0:
+        if degree < 0:
             bDir = 1
         else:
             bDir = 0

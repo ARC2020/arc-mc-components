@@ -9,7 +9,7 @@ class Ebrake():
         self.flagBrake = 0  
 
     def setup(self, func = None):
-        self.setOutputPin(self.pinEBrake)
+        self.setOutputPin(self.pinEBrake, 0)
         self.setInputPin(self.pinMBrake, func)
 
     def setInputPin(self, pin, func = None):
@@ -19,10 +19,10 @@ class Ebrake():
         # do not set pin to input, experimentally worse
         self.io.triggerCallback(pin, func, state = 2)
 
-    def setOutputPin(self, pin):
+    def setOutputPin(self, pin, level):
         self.pinEbrake = pin
         self.io.setMode(pin, output = 1)
-        self.io.write(pin, 1)
+        self.io.write(pin, level)
 
     def readMBrake(self):
         return self.io.read(self.pinMBrake)

@@ -1,21 +1,24 @@
 import time
 class Ebrake():
-    def __init__(self, io, pinMBrake, pinEBrake):
+    ebrakeOn = 0
+    ebrakeOff = 1
+    def __init__(self, io, pinMbrake, pinEbrake):
         self.io = io
-        self.pinMBrake = pinMBrake
-        self.pinEBrake = pinEBrake
-        self.stateMBrake = 0 # open
-        self.stateEBrake = 0
+        self.pinMbrake = pinMbrake
+        self.pinEbrake = pinEbrake
+        self.stateMbrake = 0 
+        self.stateEbrake = 0
         self.flagBrake = 0  
 
     def setup(self, func = None):
-        self.setOutputPin(self.pinEBrake, 1)
-        self.setInputPin(self.pinMBrake, func)
+        self.setOutputPin(self.pinEbrake, 1)
+        self.setInputPin(self.pinMbrake, func)
 
     def setInputPin(self, pin, func = None):
         if func is None:
-            func = self.mBrakeCallback
-        self.pinMBrake = pin
+            func = self.mbrakeCallback
+        self.pinMbrake = pin
+        self.stateMbrake = self.io.read(pin)
         # do not set pin to input, experimentally worse
         self.io.triggerCallback(pin, func, state = 2)
 
@@ -27,10 +30,11 @@ class Ebrake():
         '''
         self.pinEbrake = pin
         self.io.setMode(pin, output = 1)
-        self.io.write(pin, level)
+        self.io.write(pin, Ebrake.ebrakeOff)
+        self.stateEbrake = self.io.read(pin)
 
-    def readMBrake(self):
-        return self.io.read(self.pinMBrake)
+    def readMbrake(self):
+        return self.io.read(self.pinMbrake)
 
     def setEbrake(self, state = 0):
         '''
@@ -38,26 +42,28 @@ class Ebrake():
         0 = normally-open switch closes 
         1 = normally-open switch open
         '''
-        self.io.write(self.pinEBrake, state)
-        self.stateEBrake = state
+        self.io.write(self.pinEbrake, state)
+        self.stateEbrake = state
         self.flagBrake = state
 
-    def mBrakeCallback(self, pin, level, tick):
-        if pin != self.pinMBrake:
-            return 
-        # trigger is bouncy read pin to see if state changed
-        state = self.readMBrake()
-        # ebrake will trigger pin 
-        # check if mbrake different from ebrake 
-        if self.stateEBrake == state:
-            return 
-        if state != self.stateMBrake:
-            self.flagBrake = state
-            self.stateMBrake = state
-            print("Manual brake engaged")
-            print(f'Level: {state}')
-            print(f'tick : {tick}')
+    def mbrakeCallback(self, pin, level, tick):
         # print('triggered callback, time: ',time.time())
+        if pin != self.pinMbrake:
+            return 
+        # ebrake will trigger pin 
+        # check if ebrake on
+        if self.stateEbrake == Ebrake.ebrakeOn:
+            return
+        # trigger is bouncy read pin to see if state changed
+        state = self.readMbrake() 
+        if state != self.stateMbrake:
+            self.flagBrake = state
+            self.stateMbrake = state
+            print("Manual brake engaged")
+            print("Manual brake", "on" if state==0 else "off")
+            print(f'State: {state}')
+            print(f'tick : {tick}')
+        
         return level 
 
 if __name__ == "__main__":

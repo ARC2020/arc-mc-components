@@ -1,25 +1,57 @@
 from numpy import diff, mean
-
-verbose = 0
+from time import sleep
+verbose = 1
 
 class Tachometer():
-    def __init__(self, io, sensePin, buttonLeft, circ = 2055):
+    def __init__(self, io, sensePin, buttonLeft, pwr, circ = 2055):
         self.io = io
         self.sensePin = sensePin
         self.buttonLeft = buttonLeft
+        self.pwr = pwr
         self.circ = circ
-        self.t1 = 0
+        self.t1 = io.pi.get_current_tick()
         self.speed = 0
 
+    def on(self):
+        self.io.write(self.pwr, 1)
+
+    def off(self):
+        self.io.write(self.pwr, 0)
+
+    def pwrSetup(self, bootWait = 3.5, sleepWait = 0.8):
+        self.io.setMode(self.pwr, output = 1)
+        state = self.io.read(self.pwr)
+        if state == 1:
+            self.off()
+            sleep(sleepWait)
+        self.on()
+        sleep(bootWait)
+
+    def reboot(self, bootWait = 3.5, sleepWait = 0.8):
+        self.off()
+        sleep(sleepWait)
+        self.on()
+        sleep(bootWait)
+        self.buttonSetup(14)
+
+    def wakeup(self):
+        '''
+        use if tach unresponsive, tach will fall asleep if no activity occurs for 300 seconds
+        '''
+        self.io.sendPulses(self.buttonLeft, numPulse = 1, freq = 5)
+
     def setup(self, func = None):
+        self.pwrSetup()
+        self.buttonSetup(14)
         if func is None:
             func = self.tachCallback 
         self.io.triggerCallback(self.sensePin, func, state = 1)
+        self.io.pi.set_watchdog(self.sensePin, 60000) # max amount watchdog can wait: 60s
 
     def buttonSetup(self, pulses):
         self.io.setMode(self.buttonLeft, output = 1)
         self.io.write(self.buttonLeft, 1)
-        self.io.sendPulses(self.buttonLeft, numPulse = 14, freq = 50)
+        self.io.sendPulses(self.buttonLeft, numPulse = 14, freq = 5)
 
     def tickToMilisecond(self, tick):
         return tick//1000 # // = integer division
@@ -40,6 +72,10 @@ class Tachometer():
         if verbose:
             print(f"t1: {self.t1} tick: {tick}")
             print(f"level: {level}")
+        if level == 2: # watchdog timeout 
+            print("watchdog timeout")
+            self.wakeup()
+            return
         self.rpm = self.calcRPM([self.t1, tick])
         kmh = self.rpmToKmh(self.rpm)
         print(f"Speed {self.rpm} m/s, {kmh} km/hr")

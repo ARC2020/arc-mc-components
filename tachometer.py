@@ -3,9 +3,10 @@ from numpy import diff, mean
 verbose = 0
 
 class Tachometer():
-    def __init__(self, io, pin, circ = 2055):
+    def __init__(self, io, sensePin, buttonLeft, circ = 2055):
         self.io = io
-        self.pin = pin
+        self.sensePin = sensePin
+        self.buttonLeft = buttonLeft
         self.circ = circ
         self.t1 = 0
         self.speed = 0
@@ -13,7 +14,12 @@ class Tachometer():
     def setup(self, func = None):
         if func is None:
             func = self.tachCallback 
-        self.io.triggerCallback(self.pin, func, state = 1)
+        self.io.triggerCallback(self.sensePin, func, state = 1)
+
+    def buttonSetup(self, pulses):
+        self.io.setMode(self.buttonLeft, output = 1)
+        self.io.write(self.buttonLeft, 1)
+        self.io.sendPulses(self.buttonLeft, numPulse = 14, freq = 50)
 
     def tickToMilisecond(self, tick):
         return tick//1000 # // = integer division
@@ -28,7 +34,7 @@ class Tachometer():
         return self.circ/timeAvg # m/s
 
     def tachCallback(self, pin, level, tick):
-        if pin != self.pin:
+        if pin != self.sensePin:
             return 
         # maybe add some signal processing
         if verbose:
@@ -50,9 +56,10 @@ if __name__ == "__main__":
     gpio = IO()
 
     TACH = 21
+    BUTTON = 20
 
     print('Setting up tach')
-    tach = Tachometer(gpio, TACH)
+    tach = Tachometer(gpio, TACH, BUTTON)
     tach.setup()
     wait = 100
     print(f"waiting for {wait} seconds")

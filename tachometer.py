@@ -76,9 +76,9 @@ class Tachometer():
             print("watchdog timeout")
             self.wakeup()
             return
-        self.rpm = self.calcRPM([self.t1, tick])
-        kmh = self.rpmToKmh(self.rpm)
-        print(f"Speed {self.rpm} m/s, {kmh} km/hr")
+        rpm = self.calcRPM([self.t1, tick])
+        self.speed = self.rpmToKmh(rpm)
+        print(f"Speed {rpm} m/s, {self.speed} km/hr")
         self.t1 = tick
 
 if __name__ == "__main__":
@@ -93,9 +93,10 @@ if __name__ == "__main__":
 
     TACH = 21
     BUTTON = 20
+    PWR = 26
 
     print('Setting up tach')
-    tach = Tachometer(gpio, TACH, BUTTON)
+    tach = Tachometer(gpio, TACH, BUTTON, PWR)
     tach.setup()
     wait = 100
     print(f"waiting for {wait} seconds")
